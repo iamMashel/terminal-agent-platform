@@ -10,6 +10,7 @@ Prepare for Phase 5 explicit command approval.
 
 ## Completed
 - Codex-ready specs prepared
+- Documented professional Git history rules for phase branches, scoped commits, and merge expectations
 - Created monorepo ownership structure for `apps/api`, `apps/web`, and `infra`
 - Added backend subdirectories for routes, schemas, services, core config, database, LLM, agent, execution, and tests
 - Added frontend placeholder directories for pages, components, composables, public assets, and shared types

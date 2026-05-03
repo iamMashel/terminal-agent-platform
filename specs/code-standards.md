@@ -52,9 +52,18 @@
 
 ## Git
 
-- Use feature branches.
+- Keep `main` stable and deployable.
+- Use a feature branch for every new phase or meaningful workstream.
+- Name phase branches with the pattern `feature/phase-{number}-{short-topic}`.
+  - Example: `feature/phase-5-command-approval`
+  - Example: `feature/phase-6-docker-execution`
+- Do not commit new implementation work directly to `main` after the bootstrap history.
 - Commit after each working vertical slice.
+- Keep commits scoped, reviewable, and ordered by intent.
 - Use meaningful commit messages:
   - `feat: add command proposal API`
   - `fix: validate llm command output`
   - `chore: prepare railway deployment`
+- Prefer pull requests or merge commits from feature branches into `main` so GitHub shows the branch-based project history.
+- Before merging a phase branch, run the relevant backend tests, frontend checks, and update `specs/progress-tracker.md`.
+- Do not include local machine paths, usernames, secrets, or environment-specific absolute paths in commit messages, docs, or code.
