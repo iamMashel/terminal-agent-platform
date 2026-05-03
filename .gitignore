@@ -40,6 +40,8 @@ test-results/
 # Docker / local runtime
 *.pid
 *.log
+*.db
+*.db-*
 docker-compose.override.yml
 
 # OS / editor

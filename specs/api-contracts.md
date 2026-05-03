@@ -65,6 +65,9 @@ Response:
 }
 ```
 
+Session detail data is persisted in Phase 12 with SQLAlchemy models backed by
+PostgreSQL in local Docker Compose.
+
 ## Chat
 
 ### POST `/chat`

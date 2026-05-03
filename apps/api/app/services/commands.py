@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from app.db.repository import add_command, get_command, update_command_status
+from app.db.session import get_session
 from app.schemas.chat import CommandProposal
 from app.schemas.commands import ApprovalDecision, CommandApprovalResponse, CommandStatus
 
@@ -25,47 +27,47 @@ class StoredCommand:
     status: CommandStatus = "proposed"
 
 
-_commands: dict[str, StoredCommand] = {}
-
-
-def register_command_proposal(proposal: CommandProposal) -> None:
-    _commands[proposal.id] = StoredCommand(
-        command_id=proposal.id,
-        cmd=proposal.cmd,
-        risk=proposal.risk,
-        explanation=proposal.explanation,
-        status=proposal.status,
-    )
+def register_command_proposal(proposal: CommandProposal, session_id: str) -> None:
+    with get_session() as db:
+        add_command(db, session_id, proposal)
 
 
 def record_command_approval(
     command_id: str,
     decision: ApprovalDecision,
 ) -> CommandApprovalResponse:
-    command = _commands.get(command_id)
+    with get_session() as db:
+        command = get_command(db, command_id)
 
-    if command is None:
-        raise CommandNotFoundError
+        if command is None:
+            raise CommandNotFoundError
 
-    if command.status != "proposed" and command.status != decision:
-        raise CommandStatusConflictError
+        if command.status != "proposed" and command.status != decision:
+            raise CommandStatusConflictError
 
-    command.status = decision
+        command = update_command_status(db, command, decision)
 
-    return CommandApprovalResponse(
-        command_id=command.command_id,
-        status=command.status,
-        message=f"Command {command.status}.",
-    )
+        return CommandApprovalResponse(
+            command_id=command.id,
+            status=command.status,
+            message=f"Command {command.status}.",
+        )
 
 
 def get_approved_command(command_id: str) -> StoredCommand:
-    command = _commands.get(command_id)
+    with get_session() as db:
+        command = get_command(db, command_id)
 
-    if command is None:
-        raise CommandNotFoundError
+        if command is None:
+            raise CommandNotFoundError
 
-    if command.status != "approved":
-        raise CommandNotApprovedError
+        if command.status != "approved":
+            raise CommandNotApprovedError
 
-    return command
+        return StoredCommand(
+            command_id=command.id,
+            cmd=command.cmd,
+            risk=command.risk,
+            explanation=command.explanation,
+            status=command.status,
+        )

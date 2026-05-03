@@ -5,6 +5,8 @@ from requests.exceptions import ConnectionError as RequestsConnectionError
 from requests.exceptions import ReadTimeout
 
 from app.core.config import Settings
+from app.db.repository import add_execution_log
+from app.db.session import get_session
 from app.schemas.commands import CommandExecutionResponse, ExecutionStatus
 from app.services.commands import get_approved_command
 
@@ -68,6 +70,15 @@ def execute_approved_command(
     execution_runner = runner or DockerCommandRunner()
     result = execution_runner.run(command.cmd, settings)
     status: ExecutionStatus = "completed" if result.exit_code == 0 else "failed"
+
+    with get_session() as db:
+        add_execution_log(
+            db,
+            command.command_id,
+            status,
+            result.exit_code,
+            result.output,
+        )
 
     return CommandExecutionResponse(
         command_id=command.command_id,

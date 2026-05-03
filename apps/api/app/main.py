@@ -5,14 +5,17 @@ from app.core.config import get_settings
 from app.core.logging import configure_logging
 from app.core.observability import ObservabilityMiddleware
 from app.core.tracing import build_trace_client
+from app.db.session import init_db
 from app.routes.chat import router as chat_router
 from app.routes.commands import router as commands_router
 from app.routes.health import router as health_router
+from app.routes.sessions import router as sessions_router
 
 
 def create_app() -> FastAPI:
     settings = get_settings()
     configure_logging(settings)
+    init_db()
     app = FastAPI(title=settings.app_name)
 
     app.add_middleware(
@@ -30,6 +33,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(health_router)
+    app.include_router(sessions_router)
     app.include_router(chat_router)
     app.include_router(commands_router)
     return app

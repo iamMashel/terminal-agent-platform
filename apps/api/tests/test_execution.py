@@ -98,12 +98,12 @@ def test_execute_approved_command_maps_runner_result() -> None:
             return ExecutionResult(exit_code=0, output="/workspace\n")
 
     proposal = CommandProposal(
-        id="runner-test-command",
+        id="runner-test-command-persistence",
         cmd="pwd",
         risk="low",
         explanation="Prints current directory.",
     )
-    register_command_proposal(proposal)
+    register_command_proposal(proposal, "runner-test-session")
     record_command_approval(proposal.id, "approved")
 
     result = execute_approved_command(proposal.id, Settings(), FakeRunner())
