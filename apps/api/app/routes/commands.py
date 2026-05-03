@@ -1,6 +1,10 @@
+import logging
+
 from fastapi import APIRouter, HTTPException, status
+from fastapi import Request
 
 from app.core.config import get_settings
+from app.core.observability import get_trace_context, log_event
 from app.schemas.commands import (
     CommandApprovalRequest,
     CommandApprovalResponse,
@@ -15,6 +19,7 @@ from app.services.commands import (
 from app.services.execution import execute_approved_command
 
 router = APIRouter()
+logger = logging.getLogger("app.commands")
 
 
 @router.post(
@@ -24,9 +29,18 @@ router = APIRouter()
 async def approve_command(
     command_id: str,
     request: CommandApprovalRequest,
+    fastapi_request: Request,
 ) -> CommandApprovalResponse:
+    context = get_trace_context(fastapi_request)
     try:
-        return record_command_approval(command_id, request.decision)
+        response = record_command_approval(command_id, request.decision)
+        log_event(
+            logger,
+            "command.approval_recorded",
+            context,
+            f"Command {command_id} marked {response.status}",
+        )
+        return response
     except CommandNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -43,9 +57,20 @@ async def approve_command(
     "/commands/{command_id}/execute",
     response_model=CommandExecutionResponse,
 )
-async def execute_command(command_id: str) -> CommandExecutionResponse:
+async def execute_command(
+    command_id: str,
+    request: Request,
+) -> CommandExecutionResponse:
+    context = get_trace_context(request)
     try:
-        return execute_approved_command(command_id, get_settings())
+        response = execute_approved_command(command_id, get_settings())
+        log_event(
+            logger,
+            "command.execution_completed",
+            context,
+            f"Command {command_id} execution {response.status}",
+        )
+        return response
     except CommandNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

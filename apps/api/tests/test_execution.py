@@ -4,17 +4,18 @@ from requests.exceptions import ConnectionError as RequestsConnectionError
 from requests.exceptions import ReadTimeout
 
 from app.main import app
+from app.schemas.commands import CommandExecutionResponse
 from app.services.execution import ExecutionResult
 
 
 def test_execute_endpoint_runs_approved_command(monkeypatch) -> None:
     def mock_execute_approved_command(command_id, settings):
-        return {
-            "command_id": command_id,
-            "status": "completed",
-            "exit_code": 0,
-            "output": "total 0\n",
-        }
+        return CommandExecutionResponse(
+            command_id=command_id,
+            status="completed",
+            exit_code=0,
+            output="total 0\n",
+        )
 
     monkeypatch.setattr(
         "app.routes.commands.execute_approved_command",
