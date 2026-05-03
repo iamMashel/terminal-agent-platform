@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+node_modules/
+.nuxt/
+.output/
+.nitro/
+.data/
+.cache/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+coverage/
+playwright-report/
+test-results/
+
