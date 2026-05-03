@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 from typing import Protocol
 
+from requests.exceptions import ConnectionError as RequestsConnectionError
+from requests.exceptions import ReadTimeout
+
 from app.core.config import Settings
 from app.schemas.commands import CommandExecutionResponse, ExecutionStatus
 from app.services.commands import get_approved_command
@@ -25,15 +28,30 @@ class DockerCommandRunner:
         container = client.containers.run(
             image=settings.execution_image,
             command=["sh", "-lc", command],
+            cap_drop=["ALL"],
+            cpu_period=settings.execution_cpu_period,
+            cpu_quota=settings.execution_cpu_quota,
             detach=True,
+            mem_limit=settings.execution_memory_limit,
             network_disabled=True,
+            read_only=True,
             stderr=True,
             stdout=True,
+            tmpfs={"/tmp": "rw,noexec,nosuid,size=16m"},
+            user=settings.execution_user,
+            working_dir="/tmp",
         )
 
         try:
-            wait_result = container.wait(timeout=settings.execution_timeout_seconds)
-            raw_output = container.logs(stdout=True, stderr=True)
+            try:
+                wait_result = container.wait(timeout=settings.execution_timeout_seconds)
+                raw_output = container.logs(stdout=True, stderr=True)
+            except (ReadTimeout, RequestsConnectionError):
+                container.kill()
+                return ExecutionResult(
+                    exit_code=124,
+                    output="Command timed out and was terminated.\n",
+                )
         finally:
             container.remove(force=True)
 

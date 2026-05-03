@@ -30,6 +30,7 @@ Commands run only in Docker containers with:
 - memory limit
 - CPU limit
 - timeout
+- temporary writable `/tmp` only
 
 ### Production Demo Mode
 Production deployment must set:
