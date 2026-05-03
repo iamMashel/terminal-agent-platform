@@ -54,8 +54,8 @@ Prepare for Phase 10 Claude agent nodes.
 
 ## Open Questions
 - Which deployment provider will be final after Railway demo?
-- When should real production execution be enabled?
-- Should auth be Clerk, Supabase, or custom JWT?
+- When should real production execution be enabled? Later on.
+- Should auth be Clerk, Supabase, or custom JWT? Custom JWT.
 
 ## Architecture Decisions
 - Use Nuxt 4 for frontend
