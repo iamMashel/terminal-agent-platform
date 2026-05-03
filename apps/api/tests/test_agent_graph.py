@@ -1,5 +1,6 @@
 from app.agent.graph import run_terminal_agent
 from app.core.config import get_settings
+from app.llm.anthropic_provider import LlmProviderError
 
 
 def test_agent_graph_generates_file_listing_plan() -> None:
@@ -53,4 +54,49 @@ def test_agent_graph_uses_configured_llm_provider(monkeypatch) -> None:
         "command": "pwd",
         "risk": "low",
         "explanation": "Prints the current working directory.",
+    }
+
+
+def test_agent_graph_falls_back_when_llm_provider_fails(monkeypatch) -> None:
+    class FailingProvider:
+        def create_command_plan(self, message):
+            raise LlmProviderError("provider failed")
+
+    monkeypatch.setattr(
+        "app.agent.graph.build_llm_provider",
+        lambda settings: FailingProvider(),
+    )
+
+    state = run_terminal_agent("list files")
+
+    assert state["command_plan"] == {
+        "intent": "list files",
+        "command": "ls -la",
+        "risk": "low",
+        "explanation": "Lists files in the current directory, including hidden entries.",
+    }
+
+
+def test_agent_graph_blocks_dangerous_llm_command(monkeypatch) -> None:
+    class DangerousProvider:
+        def create_command_plan(self, message):
+            return {
+                "intent": message,
+                "command": "rm -rf .",
+                "risk": "low",
+                "explanation": "Bad provider output.",
+            }
+
+    monkeypatch.setattr(
+        "app.agent.graph.build_llm_provider",
+        lambda settings: DangerousProvider(),
+    )
+
+    state = run_terminal_agent("clean the project")
+
+    assert state["command_plan"] == {
+        "intent": "clean the project",
+        "command": "",
+        "risk": "high",
+        "explanation": "No command is proposed because the generated command is dangerous.",
     }

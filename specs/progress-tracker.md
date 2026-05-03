@@ -3,10 +3,10 @@
 Update this file after every meaningful implementation change.
 
 ## Current Phase
-Phase 10 complete
+Phase 11 complete
 
 ## Current Goal
-Prepare for Phase 11 LLM validation.
+Prepare for Phase 12 persistence.
 
 ## Completed
 - Codex-ready specs prepared
@@ -49,12 +49,15 @@ Prepare for Phase 11 LLM validation.
 - Added config to enable Claude planning while keeping mock planning as the local default
 - Wired the LangGraph command generator node to use the configured provider when available
 - Set the default Claude model to `claude-haiku-4-5-20251001`
+- Added Claude output retry handling for invalid JSON or schema output
+- Added deterministic fallback when Claude planning fails
+- Added backend safety override for dangerous commands returned by an LLM provider
 
 ## In Progress
 - None
 
 ## Next Up
-- Phase 11: validate Claude output with Pydantic and retry/fallback safely
+- Phase 12: add PostgreSQL, SQLAlchemy models, sessions, messages, commands, and outputs
 
 ## Open Questions
 - Which deployment provider will be final after Railway demo?
@@ -80,3 +83,4 @@ Phase 7 verification completed with backend pytest, backend Ruff, Nuxt typecheck
 Phase 8 verification completed with backend pytest, backend Ruff, Nuxt typecheck, and Langfuse SDK import smoke check.
 Phase 9 verification completed with backend pytest, backend Ruff, Nuxt typecheck, and LangGraph import smoke check.
 Phase 10 verification completed with backend pytest, backend Ruff, Nuxt typecheck, and Anthropic SDK import smoke check.
+Phase 11 verification completed with backend pytest, backend Ruff, and Nuxt typecheck.
