@@ -13,6 +13,7 @@ class CommandProposal(BaseModel):
     cmd: str
     risk: Literal["low", "medium", "high"]
     explanation: str
+    status: Literal["proposed", "approved", "rejected"] = "proposed"
 
 
 class ChatResponse(BaseModel):

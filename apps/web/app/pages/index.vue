@@ -1,5 +1,11 @@
 <script setup lang="ts">
-import type { ChatMessage, ChatResponse } from '../../types/chat'
+import type {
+  ApprovalDecision,
+  ChatMessage,
+  ChatResponse,
+  CommandApprovalResponse,
+  CommandProposal,
+} from '../../types/chat'
 import type { HealthResponse } from '../../types/health'
 
 const config = useRuntimeConfig()
@@ -9,6 +15,7 @@ const draftMessage = ref('')
 const errorMessage = ref<string | null>(null)
 const isSending = ref(false)
 const health = ref<HealthResponse | null>(null)
+const pendingApprovalIds = ref<string[]>([])
 
 const messages = ref<ChatMessage[]>([
   {
@@ -73,6 +80,41 @@ async function sendMessage() {
     isSending.value = false
   }
 }
+
+async function submitApproval(
+  command: CommandProposal,
+  decision: ApprovalDecision,
+) {
+  if (command.status !== 'proposed' || pendingApprovalIds.value.includes(command.id)) {
+    return
+  }
+
+  errorMessage.value = null
+  pendingApprovalIds.value = [...pendingApprovalIds.value, command.id]
+
+  try {
+    const response = await $fetch<CommandApprovalResponse>(
+      `/commands/${command.id}/approval`,
+      {
+        baseURL: config.public.apiBaseUrl,
+        method: 'POST',
+        body: { decision },
+      },
+    )
+
+    command.status = response.status
+  } catch {
+    errorMessage.value = 'Unable to record command approval decision.'
+  } finally {
+    pendingApprovalIds.value = pendingApprovalIds.value.filter(
+      (commandId) => commandId !== command.id,
+    )
+  }
+}
+
+function isApprovalPending(commandId: string) {
+  return pendingApprovalIds.value.includes(commandId)
+}
 </script>
 
 <template>
@@ -101,10 +143,10 @@ async function sendMessage() {
     <section class="chat-panel" aria-labelledby="chat-title">
       <header class="chat-header">
         <div>
-          <p class="eyebrow">Phase 4</p>
-          <h2 id="chat-title">Command Proposals</h2>
+          <p class="eyebrow">Phase 5</p>
+          <h2 id="chat-title">Command Approval</h2>
         </div>
-        <span class="status-pill">Structured mock</span>
+        <span class="status-pill">Approval required</span>
       </header>
 
       <div class="message-list" aria-live="polite">
@@ -132,6 +174,31 @@ async function sendMessage() {
 
               <code>{{ command.cmd }}</code>
               <p>{{ command.explanation }}</p>
+
+              <div class="approval-row">
+                <span class="approval-status" :class="command.status">
+                  {{ command.status }}
+                </span>
+
+                <div class="approval-actions">
+                  <button
+                    class="approve-button"
+                    type="button"
+                    :disabled="command.status !== 'proposed' || isApprovalPending(command.id)"
+                    @click="submitApproval(command, 'approved')"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    class="reject-button"
+                    type="button"
+                    :disabled="command.status !== 'proposed' || isApprovalPending(command.id)"
+                    @click="submitApproval(command, 'rejected')"
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
             </article>
           </div>
         </article>
@@ -232,7 +299,8 @@ h2 {
 
 .new-session-button,
 .session-item,
-.composer button {
+.composer button,
+.approval-actions button {
   border: 1px solid #2563eb;
   border-radius: 8px;
   background: #2563eb;
@@ -429,6 +497,57 @@ h2 {
   color: #fca5a5;
 }
 
+.approval-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.approval-status {
+  border: 1px solid #3f3f46;
+  border-radius: 999px;
+  background: #18181b;
+  color: #d4d4d8;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.approval-status.approved {
+  border-color: #14532d;
+  background: #052e16;
+  color: #86efac;
+}
+
+.approval-status.rejected {
+  border-color: #991b1b;
+  background: #450a0a;
+  color: #fca5a5;
+}
+
+.approval-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.approval-actions button {
+  min-height: 2.1rem;
+  padding: 0 0.75rem;
+  font-size: 0.85rem;
+}
+
+.approval-actions .approve-button {
+  border-color: #16a34a;
+  background: #15803d;
+}
+
+.approval-actions .reject-button {
+  border-color: #b91c1c;
+  background: #991b1b;
+}
+
 .error-message {
   margin: 0 1.5rem 1rem;
   color: #fca5a5;
@@ -506,6 +625,16 @@ h2 {
 
   .composer button {
     width: 100%;
+  }
+
+  .approval-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .approval-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
 }
 </style>

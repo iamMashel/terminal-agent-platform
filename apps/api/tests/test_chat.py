@@ -36,6 +36,7 @@ def test_chat_endpoint_returns_command_proposal() -> None:
         "cmd": "ls -la",
         "risk": "low",
         "explanation": "Lists files in the current directory, including hidden entries.",
+        "status": "proposed",
     }
 
 
@@ -61,6 +62,7 @@ def test_chat_endpoint_returns_txt_file_command_for_text_file_request() -> None:
     assert isinstance(command, dict)
     assert command["cmd"] == "find . -name '*.txt'"
     assert command["risk"] == "low"
+    assert command["status"] == "proposed"
 
 
 def test_chat_endpoint_rejects_empty_message() -> None:

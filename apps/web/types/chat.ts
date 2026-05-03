@@ -13,6 +13,17 @@ export interface CommandProposal {
   cmd: string
   risk: 'low' | 'medium' | 'high'
   explanation: string
+  status: CommandStatus
+}
+
+export type CommandStatus = 'proposed' | 'approved' | 'rejected'
+
+export type ApprovalDecision = 'approved' | 'rejected'
+
+export interface CommandApprovalResponse {
+  command_id: string
+  status: CommandStatus
+  message: string
 }
 
 export interface ChatMessage {

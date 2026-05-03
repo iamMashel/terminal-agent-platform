@@ -88,11 +88,41 @@ Response:
       "id": "uuid",
       "cmd": "find . -name '*.txt'",
       "risk": "low",
-      "explanation": "Finds all .txt files recursively."
+      "explanation": "Finds all .txt files recursively.",
+      "status": "proposed"
     }
   ]
 }
 ```
+
+## Command Approval
+
+### POST `/commands/{command_id}/approval`
+
+Request:
+
+```json
+{
+  "decision": "approved"
+}
+```
+
+Response:
+
+```json
+{
+  "command_id": "uuid",
+  "status": "approved",
+  "message": "Command approved. Execution is not implemented in this phase."
+}
+```
+
+Valid decisions:
+
+- `approved`
+- `rejected`
+
+Approval only changes command status in Phase 5. It must not execute commands.
 
 ## Streaming Chat
 

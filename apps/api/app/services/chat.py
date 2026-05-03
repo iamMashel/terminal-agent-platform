@@ -1,11 +1,13 @@
 from uuid import uuid4
 
 from app.schemas.chat import ChatRequest, ChatResponse, CommandProposal
+from app.services.commands import register_command_proposal
 
 
 def create_mock_chat_response(request: ChatRequest) -> ChatResponse:
     clean_message = request.message.strip()
     command = create_mock_command_proposal(clean_message)
+    register_command_proposal(command)
 
     return ChatResponse(
         message="Here is a command proposal.",
