@@ -3,10 +3,10 @@
 Update this file after every meaningful implementation change.
 
 ## Current Phase
-Phase 8 complete
+Phase 9 complete
 
 ## Current Goal
-Prepare for Phase 9 LangGraph agent state machine.
+Prepare for Phase 10 Claude agent nodes.
 
 ## Completed
 - Codex-ready specs prepared
@@ -43,12 +43,14 @@ Prepare for Phase 9 LangGraph agent state machine.
 - Added structured JSON logging with request and trace identifiers
 - Added observability middleware that emits request lifecycle events and trace headers
 - Added optional Langfuse trace client configuration for request spans
+- Added deterministic LangGraph agent state machine for planning, safety validation, command generation, and explanations
+- Routed `/chat` command proposals through the LangGraph agent graph
 
 ## In Progress
 - None
 
 ## Next Up
-- Phase 9: replace basic logic with a LangGraph state machine
+- Phase 10: use Anthropic Claude behind a provider wrapper
 
 ## Open Questions
 - Which deployment provider will be final after Railway demo?
@@ -72,3 +74,4 @@ Phase 5 verification completed with backend pytest, backend Ruff, and Nuxt typec
 Phase 6 verification completed with backend pytest, backend Ruff, Nuxt typecheck, Docker CLI sandbox probe, and Docker SDK service probe.
 Phase 7 verification completed with backend pytest, backend Ruff, Nuxt typecheck, Docker non-root/read-only probe, and Docker timeout termination probe.
 Phase 8 verification completed with backend pytest, backend Ruff, Nuxt typecheck, and Langfuse SDK import smoke check.
+Phase 9 verification completed with backend pytest, backend Ruff, Nuxt typecheck, and LangGraph import smoke check.
