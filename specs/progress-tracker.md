@@ -48,6 +48,7 @@ Prepare for Phase 11 LLM validation.
 - Added Anthropic Claude command planner provider behind an isolated LLM wrapper
 - Added config to enable Claude planning while keeping mock planning as the local default
 - Wired the LangGraph command generator node to use the configured provider when available
+- Set the default Claude model to `claude-haiku-4-5-20251001`
 
 ## In Progress
 - None

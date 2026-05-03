@@ -22,7 +22,7 @@ def test_build_llm_provider_requires_anthropic_api_key() -> None:
 def test_anthropic_provider_parses_json_command_plan(monkeypatch) -> None:
     class FakeMessages:
         def create(self, **kwargs):
-            assert kwargs["model"] == "claude-sonnet-4-20250514"
+            assert kwargs["model"] == "claude-haiku-4-5-20251001"
             assert kwargs["max_tokens"] == 512
             assert kwargs["messages"] == [
                 {
