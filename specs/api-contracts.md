@@ -113,7 +113,7 @@ Response:
 {
   "command_id": "uuid",
   "status": "approved",
-  "message": "Command approved. Execution is not implemented in this phase."
+  "message": "Command approved."
 }
 ```
 
@@ -122,7 +122,25 @@ Valid decisions:
 - `approved`
 - `rejected`
 
-Approval only changes command status in Phase 5. It must not execute commands.
+Approval only changes command status. It must not execute commands.
+
+## Command Execution
+
+### POST `/commands/{command_id}/execute`
+
+Response:
+
+```json
+{
+  "command_id": "uuid",
+  "status": "completed",
+  "exit_code": 0,
+  "output": "./notes.txt\n"
+}
+```
+
+Execution requires prior approval. If the command is not approved, the API returns `409`.
+Execution must run through Docker and must not run directly on the host.
 
 ## Streaming Chat
 

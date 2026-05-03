@@ -12,6 +12,10 @@ class CommandStatusConflictError(Exception):
     pass
 
 
+class CommandNotApprovedError(Exception):
+    pass
+
+
 @dataclass
 class StoredCommand:
     command_id: str
@@ -51,5 +55,17 @@ def record_command_approval(
     return CommandApprovalResponse(
         command_id=command.command_id,
         status=command.status,
-        message=f"Command {command.status}. Execution is not implemented in this phase.",
+        message=f"Command {command.status}.",
     )
+
+
+def get_approved_command(command_id: str) -> StoredCommand:
+    command = _commands.get(command_id)
+
+    if command is None:
+        raise CommandNotFoundError
+
+    if command.status != "approved":
+        raise CommandNotApprovedError
+
+    return command

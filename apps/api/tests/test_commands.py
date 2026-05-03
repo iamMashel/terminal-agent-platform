@@ -28,9 +28,7 @@ def test_command_approval_marks_proposed_command_approved() -> None:
     payload = anyio.run(approve_command)
 
     assert payload["status"] == "approved"
-    assert payload["message"] == (
-        "Command approved. Execution is not implemented in this phase."
-    )
+    assert payload["message"] == "Command approved."
 
 
 def test_command_approval_can_reject_proposed_command() -> None:
@@ -57,9 +55,7 @@ def test_command_approval_can_reject_proposed_command() -> None:
     payload = anyio.run(reject_command)
 
     assert payload["status"] == "rejected"
-    assert payload["message"] == (
-        "Command rejected. Execution is not implemented in this phase."
-    )
+    assert payload["message"] == "Command rejected."
 
 
 def test_command_approval_rejects_unknown_command() -> None:

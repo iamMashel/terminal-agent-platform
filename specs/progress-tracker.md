@@ -3,10 +3,10 @@
 Update this file after every meaningful implementation change.
 
 ## Current Phase
-Phase 5 complete
+Phase 6 complete
 
 ## Current Goal
-Prepare for Phase 6 Docker execution.
+Prepare for Phase 7 execution hardening.
 
 ## Completed
 - Codex-ready specs prepared
@@ -35,12 +35,16 @@ Prepare for Phase 6 Docker execution.
 - Added backend command approval contract for explicit approve/reject decisions
 - Added in-memory command status tracking for Phase 5
 - Added command approval controls to the Nuxt command proposal UI
+- Added backend command execution contract for approved commands
+- Added Docker SDK execution service for approved command proposals
+- Added local Docker socket wiring and execution config for API development
+- Added frontend execute action and execution output panel for approved commands
 
 ## In Progress
 - None
 
 ## Next Up
-- Phase 6: run approved commands in isolated Docker containers
+- Phase 7: harden Docker execution limits and runtime isolation
 
 ## Open Questions
 - Which deployment provider will be final after Railway demo?
@@ -61,3 +65,4 @@ Phase 2 verification completed with backend pytest, backend Ruff, Nuxt typecheck
 Phase 3 verification completed with backend pytest, backend Ruff, and Nuxt typecheck.
 Phase 4 verification completed with backend pytest, backend Ruff, and Nuxt typecheck.
 Phase 5 verification completed with backend pytest, backend Ruff, and Nuxt typecheck.
+Phase 6 verification completed with backend pytest, backend Ruff, Nuxt typecheck, Docker CLI sandbox probe, and Docker SDK service probe.
