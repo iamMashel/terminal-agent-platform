@@ -4,10 +4,13 @@ services:
       context: ./apps/api
     environment:
       API_CORS_ORIGINS: '["http://localhost:3000","http://127.0.0.1:3000"]'
+      API_EXECUTION_IMAGE: alpine:3.20
+      API_EXECUTION_TIMEOUT_SECONDS: "30"
     ports:
       - "8000:8000"
     volumes:
       - ./apps/api/app:/app/app
+      - /var/run/docker.sock:/var/run/docker.sock
 
   web:
     build:

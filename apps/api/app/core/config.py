@@ -7,6 +7,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     app_name: str = "Terminal Agent API"
     service_name: str = "terminal-agent-api"
+    execution_image: str = "alpine:3.20"
+    execution_timeout_seconds: int = 30
     cors_origins: list[str] = Field(
         default_factory=lambda: [
             "http://localhost:3000",

@@ -4,6 +4,7 @@ import type {
   ChatMessage,
   ChatResponse,
   CommandApprovalResponse,
+  CommandExecutionResponse,
   CommandProposal,
 } from '../../types/chat'
 import type { HealthResponse } from '../../types/health'
@@ -16,6 +17,7 @@ const errorMessage = ref<string | null>(null)
 const isSending = ref(false)
 const health = ref<HealthResponse | null>(null)
 const pendingApprovalIds = ref<string[]>([])
+const pendingExecutionIds = ref<string[]>([])
 
 const messages = ref<ChatMessage[]>([
   {
@@ -115,6 +117,37 @@ async function submitApproval(
 function isApprovalPending(commandId: string) {
   return pendingApprovalIds.value.includes(commandId)
 }
+
+async function executeCommand(command: CommandProposal) {
+  if (command.status !== 'approved' || pendingExecutionIds.value.includes(command.id)) {
+    return
+  }
+
+  errorMessage.value = null
+  pendingExecutionIds.value = [...pendingExecutionIds.value, command.id]
+
+  try {
+    const response = await $fetch<CommandExecutionResponse>(
+      `/commands/${command.id}/execute`,
+      {
+        baseURL: config.public.apiBaseUrl,
+        method: 'POST',
+      },
+    )
+
+    command.execution = response
+  } catch {
+    errorMessage.value = 'Unable to execute approved command in the sandbox.'
+  } finally {
+    pendingExecutionIds.value = pendingExecutionIds.value.filter(
+      (commandId) => commandId !== command.id,
+    )
+  }
+}
+
+function isExecutionPending(commandId: string) {
+  return pendingExecutionIds.value.includes(commandId)
+}
 </script>
 
 <template>
@@ -143,10 +176,10 @@ function isApprovalPending(commandId: string) {
     <section class="chat-panel" aria-labelledby="chat-title">
       <header class="chat-header">
         <div>
-          <p class="eyebrow">Phase 5</p>
-          <h2 id="chat-title">Command Approval</h2>
+          <p class="eyebrow">Phase 6</p>
+          <h2 id="chat-title">Docker Execution</h2>
         </div>
-        <span class="status-pill">Approval required</span>
+        <span class="status-pill">Sandbox required</span>
       </header>
 
       <div class="message-list" aria-live="polite">
@@ -197,8 +230,26 @@ function isApprovalPending(commandId: string) {
                   >
                     Reject
                   </button>
+                  <button
+                    class="execute-button"
+                    type="button"
+                    :disabled="command.status !== 'approved' || isExecutionPending(command.id)"
+                    @click="executeCommand(command)"
+                  >
+                    Execute
+                  </button>
                 </div>
               </div>
+
+              <section v-if="command.execution" class="execution-panel">
+                <div class="execution-header">
+                  <span class="command-label">Execution output</span>
+                  <span class="execution-status" :class="command.execution.status">
+                    {{ command.execution.status }} · exit {{ command.execution.exit_code }}
+                  </span>
+                </div>
+                <pre>{{ command.execution.output || '(no output)' }}</pre>
+              </section>
             </article>
           </div>
         </article>
@@ -548,6 +599,53 @@ h2 {
   background: #991b1b;
 }
 
+.approval-actions .execute-button {
+  border-color: #0891b2;
+  background: #0e7490;
+}
+
+.execution-panel {
+  display: grid;
+  gap: 0.65rem;
+  border-top: 1px solid #27272a;
+  padding-top: 0.8rem;
+}
+
+.execution-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.execution-status {
+  border: 1px solid #14532d;
+  border-radius: 999px;
+  background: #052e16;
+  color: #86efac;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.execution-status.failed {
+  border-color: #991b1b;
+  background: #450a0a;
+  color: #fca5a5;
+}
+
+.execution-panel pre {
+  overflow-x: auto;
+  margin: 0;
+  border: 1px solid #27272a;
+  border-radius: 6px;
+  background: #09090b;
+  color: #f4f4f5;
+  padding: 0.75rem;
+  white-space: pre-wrap;
+}
+
 .error-message {
   margin: 0 1.5rem 1rem;
   color: #fca5a5;
@@ -634,7 +732,7 @@ h2 {
 
   .approval-actions {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
 }
 </style>
