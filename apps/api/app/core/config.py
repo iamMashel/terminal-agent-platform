@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     anthropic_api_key: str | None = None
     anthropic_model: str = "claude-haiku-4-5-20251001"
     anthropic_max_tokens: int = 512
+    anthropic_retry_attempts: int = 2
     execution_image: str = "alpine:3.20"
     execution_timeout_seconds: int = 30
     execution_memory_limit: str = "128m"

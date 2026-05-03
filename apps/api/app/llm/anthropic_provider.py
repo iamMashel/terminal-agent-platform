@@ -26,8 +26,20 @@ class AnthropicCommandPlanner:
         self._client = Anthropic(api_key=settings.anthropic_api_key)
         self._model = settings.anthropic_model
         self._max_tokens = settings.anthropic_max_tokens
+        self._retry_attempts = settings.anthropic_retry_attempts
 
     def create_command_plan(self, message: str) -> CommandPlan:
+        last_error: LlmProviderError | None = None
+
+        for _ in range(self._retry_attempts):
+            try:
+                return self._request_command_plan(message)
+            except LlmProviderError as exc:
+                last_error = exc
+
+        raise last_error or LlmProviderError("Claude returned an invalid command plan.")
+
+    def _request_command_plan(self, message: str) -> CommandPlan:
         response = self._client.messages.create(
             model=self._model,
             max_tokens=self._max_tokens,

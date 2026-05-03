@@ -82,3 +82,66 @@ def test_anthropic_provider_rejects_invalid_json(monkeypatch) -> None:
 
     with pytest.raises(LlmProviderError):
         planner.create_command_plan("list files")
+
+
+def test_anthropic_provider_retries_invalid_json(monkeypatch) -> None:
+    attempts = []
+
+    class FakeMessages:
+        def create(self, **kwargs):
+            attempts.append(kwargs)
+
+            if len(attempts) == 1:
+                return SimpleNamespace(
+                    content=[
+                        SimpleNamespace(type="text", text="not-json"),
+                    ]
+                )
+
+            return SimpleNamespace(
+                content=[
+                    SimpleNamespace(
+                        type="text",
+                        text=(
+                            '{"intent":"list files","command":"ls -la",'
+                            '"risk":"low","explanation":"Lists files."}'
+                        ),
+                    )
+                ]
+            )
+
+    class FakeAnthropic:
+        def __init__(self, api_key):
+            self.messages = FakeMessages()
+
+    monkeypatch.setattr("anthropic.Anthropic", FakeAnthropic)
+
+    planner = AnthropicCommandPlanner(
+        Settings(
+            llm_provider="anthropic",
+            anthropic_api_key="test-key",
+            anthropic_retry_attempts=2,
+        )
+    )
+
+    assert planner.create_command_plan("list files")["command"] == "ls -la"
+    assert len(attempts) == 2
+
+
+def test_anthropic_provider_rejects_missing_text_content(monkeypatch) -> None:
+    class FakeMessages:
+        def create(self, **kwargs):
+            return SimpleNamespace(content=[])
+
+    class FakeAnthropic:
+        def __init__(self, api_key):
+            self.messages = FakeMessages()
+
+    monkeypatch.setattr("anthropic.Anthropic", FakeAnthropic)
+
+    planner = AnthropicCommandPlanner(
+        Settings(llm_provider="anthropic", anthropic_api_key="test-key")
+    )
+
+    with pytest.raises(LlmProviderError):
+        planner.create_command_plan("list files")

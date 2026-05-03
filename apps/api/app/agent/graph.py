@@ -4,6 +4,7 @@ from langgraph.graph import END, START, StateGraph
 
 from app.agent.state import AgentState, CommandPlan
 from app.core.config import get_settings
+from app.llm.anthropic_provider import LlmProviderError
 from app.llm.provider import build_llm_provider
 
 DANGEROUS_PATTERNS = (
@@ -16,6 +17,11 @@ DANGEROUS_PATTERNS = (
 )
 
 
+def is_dangerous_text(value: str) -> bool:
+    normalized_value = value.lower()
+    return any(pattern in normalized_value for pattern in DANGEROUS_PATTERNS)
+
+
 def planner_node(state: AgentState) -> AgentState:
     message = state["user_message"].strip()
     return {
@@ -26,7 +32,7 @@ def planner_node(state: AgentState) -> AgentState:
 
 def safety_validator_node(state: AgentState) -> AgentState:
     normalized_message = state["normalized_message"]
-    blocked = any(pattern in normalized_message for pattern in DANGEROUS_PATTERNS)
+    blocked = is_dangerous_text(normalized_message)
 
     return {"blocked": blocked}
 
@@ -45,50 +51,60 @@ def command_generator_node(state: AgentState) -> AgentState:
     provider = build_llm_provider(get_settings())
 
     if provider is not None:
-        command_plan = provider.create_command_plan(state["intent"])
-        return {
-            "command_plan": CommandPlan(
-                intent=command_plan["intent"],
-                command=command_plan["command"],
-                risk=command_plan["risk"],
-                explanation=command_plan["explanation"],
-            )
-        }
+        try:
+            return {"command_plan": sanitize_command_plan(provider.create_command_plan(state["intent"]))}
+        except LlmProviderError:
+            return {"command_plan": create_deterministic_command_plan(state)}
 
+    return {"command_plan": create_deterministic_command_plan(state)}
+
+
+def sanitize_command_plan(command_plan: CommandPlan) -> CommandPlan:
+    if is_dangerous_text(command_plan["command"]):
+        return CommandPlan(
+            intent=command_plan["intent"],
+            command="",
+            risk="high",
+            explanation="No command is proposed because the generated command is dangerous.",
+        )
+
+    return CommandPlan(
+        intent=command_plan["intent"],
+        command=command_plan["command"],
+        risk=command_plan["risk"],
+        explanation=command_plan["explanation"],
+    )
+
+
+def create_deterministic_command_plan(state: AgentState) -> CommandPlan:
     normalized_message = state["normalized_message"]
 
     if "txt" in normalized_message or "text" in normalized_message:
-        return {
-            "command_plan": CommandPlan(
-                intent=state["intent"],
-                command="find . -name '*.txt'",
-                risk="low",
-                explanation=(
-                    "Finds all .txt files recursively from the current directory."
-                ),
-            )
-        }
+        return CommandPlan(
+            intent=state["intent"],
+            command="find . -name '*.txt'",
+            risk="low",
+            explanation=(
+                "Finds all .txt files recursively from the current directory."
+            ),
+        )
 
     if "file" in normalized_message or "list" in normalized_message:
-        return {
-            "command_plan": CommandPlan(
-                intent=state["intent"],
-                command="ls -la",
-                risk="low",
-                explanation=(
-                    "Lists files in the current directory, including hidden entries."
-                ),
-            )
-        }
-
-    return {
-        "command_plan": CommandPlan(
+        return CommandPlan(
             intent=state["intent"],
-            command="pwd",
+            command="ls -la",
             risk="low",
-            explanation="Prints the current working directory without changing any files.",
+            explanation=(
+                "Lists files in the current directory, including hidden entries."
+            ),
         )
-    }
+
+    return CommandPlan(
+        intent=state["intent"],
+        command="pwd",
+        risk="low",
+        explanation="Prints the current working directory without changing any files.",
+    )
 
 
 def explanation_node(state: AgentState) -> AgentState:
