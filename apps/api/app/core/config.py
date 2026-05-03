@@ -7,6 +7,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     app_name: str = "Terminal Agent API"
     service_name: str = "terminal-agent-api"
+    log_level: str = "INFO"
+    langfuse_enabled: bool = False
+    langfuse_host: str = "https://cloud.langfuse.com"
     execution_image: str = "alpine:3.20"
     execution_timeout_seconds: int = 30
     execution_memory_limit: str = "128m"
