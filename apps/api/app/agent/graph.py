@@ -3,6 +3,8 @@ from functools import lru_cache
 from langgraph.graph import END, START, StateGraph
 
 from app.agent.state import AgentState, CommandPlan
+from app.core.config import get_settings
+from app.llm.provider import build_llm_provider
 
 DANGEROUS_PATTERNS = (
     "rm -rf",
@@ -37,6 +39,19 @@ def command_generator_node(state: AgentState) -> AgentState:
                 command="",
                 risk="high",
                 explanation="No command is proposed because the request is dangerous.",
+            )
+        }
+
+    provider = build_llm_provider(get_settings())
+
+    if provider is not None:
+        command_plan = provider.create_command_plan(state["intent"])
+        return {
+            "command_plan": CommandPlan(
+                intent=command_plan["intent"],
+                command=command_plan["command"],
+                risk=command_plan["risk"],
+                explanation=command_plan["explanation"],
             )
         }
 
