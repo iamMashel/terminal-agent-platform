@@ -8,6 +8,9 @@ services:
       API_LANGFUSE_ENABLED: "false"
       API_LANGFUSE_HOST: https://cloud.langfuse.com
       LANGFUSE_HOST: https://cloud.langfuse.com
+      API_LLM_PROVIDER: mock
+      API_ANTHROPIC_MODEL: claude-sonnet-4-20250514
+      API_ANTHROPIC_MAX_TOKENS: "512"
       API_EXECUTION_IMAGE: alpine:3.20
       API_EXECUTION_TIMEOUT_SECONDS: "30"
       API_EXECUTION_MEMORY_LIMIT: 128m

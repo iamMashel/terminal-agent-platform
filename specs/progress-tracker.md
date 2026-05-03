@@ -3,10 +3,10 @@
 Update this file after every meaningful implementation change.
 
 ## Current Phase
-Phase 9 complete
+Phase 10 complete
 
 ## Current Goal
-Prepare for Phase 10 Claude agent nodes.
+Prepare for Phase 11 LLM validation.
 
 ## Completed
 - Codex-ready specs prepared
@@ -45,12 +45,15 @@ Prepare for Phase 10 Claude agent nodes.
 - Added optional Langfuse trace client configuration for request spans
 - Added deterministic LangGraph agent state machine for planning, safety validation, command generation, and explanations
 - Routed `/chat` command proposals through the LangGraph agent graph
+- Added Anthropic Claude command planner provider behind an isolated LLM wrapper
+- Added config to enable Claude planning while keeping mock planning as the local default
+- Wired the LangGraph command generator node to use the configured provider when available
 
 ## In Progress
 - None
 
 ## Next Up
-- Phase 10: use Anthropic Claude behind a provider wrapper
+- Phase 11: validate Claude output with Pydantic and retry/fallback safely
 
 ## Open Questions
 - Which deployment provider will be final after Railway demo?
@@ -75,3 +78,4 @@ Phase 6 verification completed with backend pytest, backend Ruff, Nuxt typecheck
 Phase 7 verification completed with backend pytest, backend Ruff, Nuxt typecheck, Docker non-root/read-only probe, and Docker timeout termination probe.
 Phase 8 verification completed with backend pytest, backend Ruff, Nuxt typecheck, and Langfuse SDK import smoke check.
 Phase 9 verification completed with backend pytest, backend Ruff, Nuxt typecheck, and LangGraph import smoke check.
+Phase 10 verification completed with backend pytest, backend Ruff, Nuxt typecheck, and Anthropic SDK import smoke check.

@@ -10,6 +10,10 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     langfuse_enabled: bool = False
     langfuse_host: str = "https://cloud.langfuse.com"
+    llm_provider: str = "mock"
+    anthropic_api_key: str | None = None
+    anthropic_model: str = "claude-sonnet-4-20250514"
+    anthropic_max_tokens: int = 512
     execution_image: str = "alpine:3.20"
     execution_timeout_seconds: int = 30
     execution_memory_limit: str = "128m"
