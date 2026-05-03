@@ -9,6 +9,10 @@ class Settings(BaseSettings):
     service_name: str = "terminal-agent-api"
     execution_image: str = "alpine:3.20"
     execution_timeout_seconds: int = 30
+    execution_memory_limit: str = "128m"
+    execution_cpu_quota: int = 50000
+    execution_cpu_period: int = 100000
+    execution_user: str = "65534:65534"
     cors_origins: list[str] = Field(
         default_factory=lambda: [
             "http://localhost:3000",

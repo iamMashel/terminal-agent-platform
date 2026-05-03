@@ -1,5 +1,7 @@
 import anyio
 from httpx import ASGITransport, AsyncClient
+from requests.exceptions import ConnectionError as RequestsConnectionError
+from requests.exceptions import ReadTimeout
 
 from app.main import app
 from app.services.execution import ExecutionResult
@@ -107,3 +109,134 @@ def test_execute_approved_command_maps_runner_result() -> None:
 
     assert result.status == "completed"
     assert result.output == "/workspace\n"
+
+
+def test_docker_runner_uses_hardened_container_options(monkeypatch) -> None:
+    from app.core.config import Settings
+    from app.services.execution import DockerCommandRunner
+
+    captured_options = {}
+
+    class FakeContainer:
+        def wait(self, timeout):
+            assert timeout == 9
+            return {"StatusCode": 0}
+
+        def logs(self, stdout, stderr):
+            assert stdout is True
+            assert stderr is True
+            return b"ok\n"
+
+        def remove(self, force):
+            assert force is True
+
+    class FakeContainers:
+        def run(self, **options):
+            captured_options.update(options)
+            return FakeContainer()
+
+    class FakeClient:
+        containers = FakeContainers()
+
+    monkeypatch.setattr("docker.from_env", lambda: FakeClient())
+
+    settings = Settings(
+        execution_timeout_seconds=9,
+        execution_memory_limit="64m",
+        execution_cpu_quota=25000,
+        execution_cpu_period=100000,
+        execution_user="65534:65534",
+    )
+
+    result = DockerCommandRunner().run("pwd", settings)
+
+    assert result.exit_code == 0
+    assert result.output == "ok\n"
+    assert captured_options == {
+        "image": "alpine:3.20",
+        "command": ["sh", "-lc", "pwd"],
+        "cap_drop": ["ALL"],
+        "cpu_period": 100000,
+        "cpu_quota": 25000,
+        "detach": True,
+        "mem_limit": "64m",
+        "network_disabled": True,
+        "read_only": True,
+        "stderr": True,
+        "stdout": True,
+        "tmpfs": {"/tmp": "rw,noexec,nosuid,size=16m"},
+        "user": "65534:65534",
+        "working_dir": "/tmp",
+    }
+
+
+def test_docker_runner_terminates_timed_out_container(monkeypatch) -> None:
+    from app.core.config import Settings
+    from app.services.execution import DockerCommandRunner
+
+    events = []
+
+    class FakeContainer:
+        def wait(self, timeout):
+            assert timeout == 1
+            raise ReadTimeout
+
+        def kill(self):
+            events.append("killed")
+
+        def remove(self, force):
+            assert force is True
+            events.append("removed")
+
+    class FakeContainers:
+        def run(self, **options):
+            return FakeContainer()
+
+    class FakeClient:
+        containers = FakeContainers()
+
+    monkeypatch.setattr("docker.from_env", lambda: FakeClient())
+
+    result = DockerCommandRunner().run(
+        "sleep 30",
+        Settings(execution_timeout_seconds=1),
+    )
+
+    assert result.exit_code == 124
+    assert result.output == "Command timed out and was terminated.\n"
+    assert events == ["killed", "removed"]
+
+
+def test_docker_runner_handles_docker_wait_connection_timeout(monkeypatch) -> None:
+    from app.core.config import Settings
+    from app.services.execution import DockerCommandRunner
+
+    events = []
+
+    class FakeContainer:
+        def wait(self, timeout):
+            raise RequestsConnectionError("Read timed out.")
+
+        def kill(self):
+            events.append("killed")
+
+        def remove(self, force):
+            events.append("removed")
+
+    class FakeContainers:
+        def run(self, **options):
+            return FakeContainer()
+
+    class FakeClient:
+        containers = FakeContainers()
+
+    monkeypatch.setattr("docker.from_env", lambda: FakeClient())
+
+    result = DockerCommandRunner().run(
+        "sleep 30",
+        Settings(execution_timeout_seconds=1),
+    )
+
+    assert result.exit_code == 124
+    assert result.output == "Command timed out and was terminated.\n"
+    assert events == ["killed", "removed"]

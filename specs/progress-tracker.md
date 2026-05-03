@@ -3,10 +3,10 @@
 Update this file after every meaningful implementation change.
 
 ## Current Phase
-Phase 6 complete
+Phase 7 complete
 
 ## Current Goal
-Prepare for Phase 7 execution hardening.
+Prepare for Phase 8 observability.
 
 ## Completed
 - Codex-ready specs prepared
@@ -39,12 +39,13 @@ Prepare for Phase 7 execution hardening.
 - Added Docker SDK execution service for approved command proposals
 - Added local Docker socket wiring and execution config for API development
 - Added frontend execute action and execution output panel for approved commands
+- Added Docker execution hardening defaults for non-root user, read-only filesystem, dropped capabilities, memory limit, CPU quota, and timeout termination
 
 ## In Progress
 - None
 
 ## Next Up
-- Phase 7: harden Docker execution limits and runtime isolation
+- Phase 8: add Langfuse traces and structured logs
 
 ## Open Questions
 - Which deployment provider will be final after Railway demo?
@@ -66,3 +67,4 @@ Phase 3 verification completed with backend pytest, backend Ruff, and Nuxt typec
 Phase 4 verification completed with backend pytest, backend Ruff, and Nuxt typecheck.
 Phase 5 verification completed with backend pytest, backend Ruff, and Nuxt typecheck.
 Phase 6 verification completed with backend pytest, backend Ruff, Nuxt typecheck, Docker CLI sandbox probe, and Docker SDK service probe.
+Phase 7 verification completed with backend pytest, backend Ruff, Nuxt typecheck, Docker non-root/read-only probe, and Docker timeout termination probe.
