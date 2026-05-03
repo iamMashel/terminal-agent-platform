@@ -3,10 +3,10 @@
 Update this file after every meaningful implementation change.
 
 ## Current Phase
-Phase 4 complete
+Phase 5 complete
 
 ## Current Goal
-Prepare for Phase 5 explicit command approval.
+Prepare for Phase 6 Docker execution.
 
 ## Completed
 - Codex-ready specs prepared
@@ -32,12 +32,15 @@ Prepare for Phase 5 explicit command approval.
 - Added typed backend command proposal schema to the `/chat` response
 - Added deterministic mock command proposals for safe read-only file and directory inspection
 - Rendered structured command proposal cards in the Nuxt chat UI with visible risk labels
+- Added backend command approval contract for explicit approve/reject decisions
+- Added in-memory command status tracking for Phase 5
+- Added command approval controls to the Nuxt command proposal UI
 
 ## In Progress
 - None
 
 ## Next Up
-- Phase 5: add explicit approval before command execution
+- Phase 6: run approved commands in isolated Docker containers
 
 ## Open Questions
 - Which deployment provider will be final after Railway demo?
@@ -57,3 +60,4 @@ This project should be built one phase at a time. Codex should not jump ahead or
 Phase 2 verification completed with backend pytest, backend Ruff, Nuxt typecheck, Docker Compose config validation, Python compile, API health curl, Nuxt root-route curl, and a path/secret scan.
 Phase 3 verification completed with backend pytest, backend Ruff, and Nuxt typecheck.
 Phase 4 verification completed with backend pytest, backend Ruff, and Nuxt typecheck.
+Phase 5 verification completed with backend pytest, backend Ruff, and Nuxt typecheck.
