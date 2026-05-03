@@ -65,6 +65,31 @@ def test_chat_endpoint_returns_txt_file_command_for_text_file_request() -> None:
     assert command["status"] == "proposed"
 
 
+def test_chat_endpoint_blocks_dangerous_command_request() -> None:
+    async def request_chat() -> dict[str, object]:
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                "/chat",
+                json={
+                    "session_id": "local-session",
+                    "message": "please rm -rf this project",
+                },
+            )
+
+        assert response.status_code == 200
+        return response.json()
+
+    payload = anyio.run(request_chat)
+
+    assert payload == {
+        "message": (
+            "I cannot propose a command for that request because it appears dangerous."
+        ),
+        "commands": [],
+    }
+
+
 def test_chat_endpoint_rejects_empty_message() -> None:
     async def request_chat() -> int:
         transport = ASGITransport(app=app)
