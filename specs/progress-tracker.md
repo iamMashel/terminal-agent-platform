@@ -3,10 +3,10 @@
 Update this file after every meaningful implementation change.
 
 ## Current Phase
-Phase 11 complete
+Phase 12 complete
 
 ## Current Goal
-Prepare for Phase 12 persistence.
+Prepare for Phase 13 multi-session UI.
 
 ## Completed
 - Codex-ready specs prepared
@@ -52,12 +52,16 @@ Prepare for Phase 12 persistence.
 - Added Claude output retry handling for invalid JSON or schema output
 - Added deterministic fallback when Claude planning fails
 - Added backend safety override for dangerous commands returned by an LLM provider
+- Added SQLAlchemy models for sessions, messages, command proposals, and execution logs
+- Added database-backed session, command approval, and execution output persistence
+- Added `/sessions` create/list/detail endpoints backed by persisted data
+- Added PostgreSQL service and API database configuration in Docker Compose
 
 ## In Progress
 - None
 
 ## Next Up
-- Phase 12: add PostgreSQL, SQLAlchemy models, sessions, messages, commands, and outputs
+- Phase 13: add session creation, listing, switching, and history loading in the UI
 
 ## Open Questions
 - Which deployment provider will be final after Railway demo?
@@ -84,3 +88,4 @@ Phase 8 verification completed with backend pytest, backend Ruff, Nuxt typecheck
 Phase 9 verification completed with backend pytest, backend Ruff, Nuxt typecheck, and LangGraph import smoke check.
 Phase 10 verification completed with backend pytest, backend Ruff, Nuxt typecheck, and Anthropic SDK import smoke check.
 Phase 11 verification completed with backend pytest, backend Ruff, and Nuxt typecheck.
+Phase 12 verification completed with backend pytest, backend Ruff, Nuxt typecheck, and Docker Compose config validation.
