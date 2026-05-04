@@ -8,7 +8,13 @@ from app.services.chat import (
     persist_assistant_message,
     persist_user_message,
 )
-from app.services.commands import register_command_proposal
+from app.services.commands import (
+    CommandNotApprovedError,
+    CommandNotFoundError,
+    register_command_proposal,
+)
+from app.services.execution import execute_approved_command
+from app.core.config import Settings
 
 
 def format_sse_event(event: str, data: str) -> str:
@@ -57,3 +63,28 @@ async def stream_agent_chat_response(request: ChatRequest) -> AsyncIterator[str]
             yield format_sse_event("status", "Response ready.")
 
     yield format_sse_event("done", "complete")
+
+
+async def stream_command_execution(
+    command_id: str,
+    settings: Settings,
+) -> AsyncIterator[str]:
+    yield format_sse_event("status", "Executing inside Docker sandbox...")
+
+    try:
+        response = execute_approved_command(command_id, settings)
+    except CommandNotFoundError:
+        yield format_sse_event("error", "Command proposal not found.")
+        return
+    except CommandNotApprovedError:
+        yield format_sse_event("error", "Command must be approved before execution.")
+        return
+
+    output = response.output
+    if output == "":
+        yield format_sse_event("output", "")
+    else:
+        for line in output.splitlines():
+            yield format_sse_event("output", line)
+
+    yield format_sse_event("done", "Execution complete")
