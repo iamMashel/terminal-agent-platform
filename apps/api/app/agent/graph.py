@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from functools import lru_cache
 
 from langgraph.graph import END, START, StateGraph
@@ -138,3 +139,8 @@ def build_terminal_agent_graph():
 def run_terminal_agent(message: str) -> AgentState:
     graph = build_terminal_agent_graph()
     return graph.invoke({"user_message": message})
+
+
+def stream_terminal_agent(message: str) -> Iterator[dict[str, AgentState]]:
+    graph = build_terminal_agent_graph()
+    yield from graph.stream({"user_message": message})
