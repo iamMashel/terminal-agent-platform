@@ -2,22 +2,19 @@ import anyio
 from httpx import ASGITransport, AsyncClient
 
 from app.main import app
-from app.schemas.commands import CommandExecutionResponse
 from app.services.commands import CommandNotApprovedError, CommandNotFoundError
+from app.services.execution import ExecutionStreamUpdate
 
 
 def test_execute_stream_returns_output_events(monkeypatch) -> None:
     def mock_execute_approved_command(command_id, settings):
         assert command_id == "stream-command"
-        return CommandExecutionResponse(
-            command_id=command_id,
-            status="completed",
-            exit_code=0,
-            output="./notes.txt\n./todo.txt\n",
-        )
+        yield ExecutionStreamUpdate(kind="output", data="./notes.txt\n")
+        yield ExecutionStreamUpdate(kind="output", data="./todo.txt\n")
+        yield ExecutionStreamUpdate(kind="result", data="", exit_code=0)
 
     monkeypatch.setattr(
-        "app.core.sse.execute_approved_command",
+        "app.core.sse.execute_approved_command_stream",
         mock_execute_approved_command,
     )
 
@@ -48,7 +45,7 @@ def test_execute_stream_returns_error_event_for_missing_command(monkeypatch) -> 
         raise CommandNotFoundError
 
     monkeypatch.setattr(
-        "app.core.sse.execute_approved_command",
+        "app.core.sse.execute_approved_command_stream",
         mock_execute_approved_command,
     )
 
@@ -74,7 +71,7 @@ def test_execute_stream_returns_error_event_for_unapproved_command(monkeypatch) 
         raise CommandNotApprovedError
 
     monkeypatch.setattr(
-        "app.core.sse.execute_approved_command",
+        "app.core.sse.execute_approved_command_stream",
         mock_execute_approved_command,
     )
 
