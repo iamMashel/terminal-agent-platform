@@ -25,10 +25,16 @@ def test_chat_stream_returns_sse_command_events() -> None:
     content_type, body = anyio.run(request_stream)
 
     assert content_type.startswith("text/event-stream")
-    assert body.startswith("event: status\ndata: Understanding request...\n\n")
+    assert body.startswith("event: status\ndata: Planning request...\n\n")
+    assert "event: reasoning\ndata: Intent: list files\n\n" in body
+    assert "event: status\ndata: Checking command safety...\n\n" in body
+    assert "event: reasoning\ndata: Request passed safety validation.\n\n" in body
+    assert "event: status\ndata: Generating command proposal...\n\n" in body
     assert (
-        "event: reasoning\ndata: This is a read-only file discovery task.\n\n" in body
-    )
+        "event: reasoning\ndata: Lists files in the current directory, "
+        "including hidden entries.\n\n"
+    ) in body
+    assert "event: status\ndata: Response ready.\n\n" in body
     assert body.endswith("event: done\ndata: complete\n\n")
 
     command_data = body.split("event: command\ndata: ", 1)[1].split("\n\n", 1)[0]
@@ -60,8 +66,12 @@ def test_chat_stream_omits_command_event_for_dangerous_request() -> None:
 
     body = anyio.run(request_stream)
 
-    assert "event: status" in body
-    assert "event: reasoning" in body
+    assert "event: status\ndata: Planning request..." in body
+    assert "event: reasoning\ndata: Request blocked by safety rules." in body
+    assert (
+        "event: reasoning\ndata: No command is proposed because the request is dangerous."
+        in body
+    )
     assert "event: command" not in body
     assert body.endswith("event: done\ndata: complete\n\n")
 

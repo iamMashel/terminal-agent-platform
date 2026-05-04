@@ -3,10 +3,10 @@
 Update this file after every meaningful implementation change.
 
 ## Current Phase
-Phase 14 complete
+Phase 15 complete
 
 ## Current Goal
-Prepare for Phase 15 agent event streaming.
+Prepare for Phase 16 execution output streaming.
 
 ## Completed
 - Codex-ready specs prepared
@@ -58,12 +58,13 @@ Prepare for Phase 15 agent event streaming.
 - Added PostgreSQL service and API database configuration in Docker Compose
 - Added frontend session creation, listing, switching, and persisted history loading
 - Added backend `/chat/stream` Server-Sent Events foundation for status, reasoning, command, and done events
+- Streamed LangGraph planner, safety, command generation, and explanation progress through `/chat/stream`
 
 ## In Progress
 - None
 
 ## Next Up
-- Phase 15: stream LangGraph agent events through the chat SSE endpoint
+- Phase 16: stream command execution output events
 
 ## Open Questions
 - Which deployment provider will be final after Railway demo?
@@ -93,3 +94,4 @@ Phase 11 verification completed with backend pytest, backend Ruff, and Nuxt type
 Phase 12 verification completed with backend pytest, backend Ruff, Nuxt typecheck, and Docker Compose config validation.
 Phase 13 verification completed with backend pytest, backend Ruff, and Nuxt typecheck using a clean generated Nuxt cache.
 Phase 14 verification completed with backend pytest and backend Ruff.
+Phase 15 verification completed with backend pytest and backend Ruff.
