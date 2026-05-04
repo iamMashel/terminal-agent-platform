@@ -2,6 +2,7 @@ from collections.abc import AsyncIterator
 
 from app.agent.graph import stream_terminal_agent
 from app.agent.state import AgentState
+from app.core.config import Settings
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.services.chat import (
     create_command_proposal,
@@ -13,8 +14,7 @@ from app.services.commands import (
     CommandNotFoundError,
     register_command_proposal,
 )
-from app.services.execution import execute_approved_command
-from app.core.config import Settings
+from app.services.execution import execute_approved_command_stream
 
 
 def format_sse_event(event: str, data: str) -> str:
@@ -72,7 +72,12 @@ async def stream_command_execution(
     yield format_sse_event("status", "Executing inside Docker sandbox...")
 
     try:
-        response = execute_approved_command(command_id, settings)
+        output_sent = False
+        for update in execute_approved_command_stream(command_id, settings):
+            if update.kind == "output":
+                output_sent = True
+                for line in update.data.splitlines():
+                    yield format_sse_event("output", line)
     except CommandNotFoundError:
         yield format_sse_event("error", "Command proposal not found.")
         return
@@ -80,11 +85,7 @@ async def stream_command_execution(
         yield format_sse_event("error", "Command must be approved before execution.")
         return
 
-    output = response.output
-    if output == "":
+    if not output_sent:
         yield format_sse_event("output", "")
-    else:
-        for line in output.splitlines():
-            yield format_sse_event("output", line)
 
     yield format_sse_event("done", "Execution complete")

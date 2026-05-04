@@ -2,10 +2,11 @@ import anyio
 from httpx import ASGITransport, AsyncClient
 from requests.exceptions import ConnectionError as RequestsConnectionError
 from requests.exceptions import ReadTimeout
+from uuid import uuid4
 
 from app.main import app
 from app.schemas.commands import CommandExecutionResponse
-from app.services.execution import ExecutionResult
+from app.services.execution import ExecutionResult, ExecutionStreamUpdate
 
 
 def test_execute_endpoint_runs_approved_command(monkeypatch) -> None:
@@ -119,14 +120,15 @@ def test_docker_runner_uses_hardened_container_options(monkeypatch) -> None:
     captured_options = {}
 
     class FakeContainer:
-        def wait(self, timeout):
-            assert timeout == 9
+        def wait(self):
             return {"StatusCode": 0}
 
-        def logs(self, stdout, stderr):
+        def logs(self, stdout, stderr, stream, follow):
             assert stdout is True
             assert stderr is True
-            return b"ok\n"
+            assert stream is True
+            assert follow is True
+            return [b"ok\n"]
 
         def remove(self, force):
             assert force is True
@@ -178,9 +180,11 @@ def test_docker_runner_terminates_timed_out_container(monkeypatch) -> None:
     events = []
 
     class FakeContainer:
-        def wait(self, timeout):
-            assert timeout == 1
+        def wait(self):
             raise ReadTimeout
+
+        def logs(self, stdout, stderr, stream, follow):
+            return []
 
         def kill(self):
             events.append("killed")
@@ -215,8 +219,11 @@ def test_docker_runner_handles_docker_wait_connection_timeout(monkeypatch) -> No
     events = []
 
     class FakeContainer:
-        def wait(self, timeout):
+        def wait(self):
             raise RequestsConnectionError("Read timed out.")
+
+        def logs(self, stdout, stderr, stream, follow):
+            return []
 
         def kill(self):
             events.append("killed")
@@ -241,3 +248,48 @@ def test_docker_runner_handles_docker_wait_connection_timeout(monkeypatch) -> No
     assert result.exit_code == 124
     assert result.output == "Command timed out and was terminated.\n"
     assert events == ["killed", "removed"]
+
+
+def test_execute_approved_command_stream_persists_streamed_output() -> None:
+    from app.core.config import Settings
+    from app.db.repository import get_command
+    from app.db.session import get_session
+    from app.schemas.chat import CommandProposal
+    from app.services.commands import register_command_proposal, record_command_approval
+    from app.services.execution import execute_approved_command_stream
+
+    class FakeStreamingRunner:
+        def run(self, command, settings):
+            raise AssertionError("streaming execution should not call run")
+
+        def stream(self, command, settings):
+            assert command == "pwd"
+            yield ExecutionStreamUpdate(kind="output", data="/")
+            yield ExecutionStreamUpdate(kind="output", data="workspace\n")
+            yield ExecutionStreamUpdate(kind="result", data="", exit_code=0)
+
+    proposal = CommandProposal(
+        id=f"stream-runner-test-command-persistence-{uuid4()}",
+        cmd="pwd",
+        risk="low",
+        explanation="Prints current directory.",
+    )
+    register_command_proposal(proposal, "stream-runner-test-session")
+    record_command_approval(proposal.id, "approved")
+
+    updates = list(
+        execute_approved_command_stream(proposal.id, Settings(), FakeStreamingRunner())
+    )
+
+    assert updates == [
+        ExecutionStreamUpdate(kind="output", data="/"),
+        ExecutionStreamUpdate(kind="output", data="workspace\n"),
+        ExecutionStreamUpdate(kind="result", data="", exit_code=0),
+    ]
+
+    with get_session() as db:
+        command = get_command(db, proposal.id)
+        assert command is not None
+        assert len(command.execution_logs) == 1
+        assert command.execution_logs[0].status == "completed"
+        assert command.execution_logs[0].output == "/workspace\n"

@@ -3,10 +3,10 @@
 Update this file after every meaningful implementation change.
 
 ## Current Phase
-Phase 16 complete
+Phase 17 complete
 
 ## Current Goal
-Prepare for Phase 17 safe Docker SDK output streaming.
+Prepare for Phase 18 production readiness.
 
 ## Completed
 - Codex-ready specs prepared
@@ -60,12 +60,13 @@ Prepare for Phase 17 safe Docker SDK output streaming.
 - Added backend `/chat/stream` Server-Sent Events foundation for status, reasoning, command, and done events
 - Streamed LangGraph planner, safety, command generation, and explanation progress through `/chat/stream`
 - Added backend `/execute/stream` Server-Sent Events foundation for execution status, output, done, and error events
+- Streamed Docker SDK command output live from the sandbox while preserving persisted execution logs
 
 ## In Progress
 - None
 
 ## Next Up
-- Phase 17: stream Docker SDK command output live from the sandbox
+- Phase 18: add production readiness configuration, CORS, error handling, logging, Docker improvements, and deployment safety
 
 ## Open Questions
 - Which deployment provider will be final after Railway demo?
@@ -97,3 +98,4 @@ Phase 13 verification completed with backend pytest, backend Ruff, and Nuxt type
 Phase 14 verification completed with backend pytest and backend Ruff.
 Phase 15 verification completed with backend pytest and backend Ruff.
 Phase 16 verification completed with backend pytest and backend Ruff.
+Phase 17 verification completed with backend pytest and backend Ruff.
