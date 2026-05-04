@@ -3,10 +3,10 @@
 Update this file after every meaningful implementation change.
 
 ## Current Phase
-Phase 12 complete
+Phase 13 complete
 
 ## Current Goal
-Prepare for Phase 13 multi-session UI.
+Prepare for Phase 14 SSE streaming foundation.
 
 ## Completed
 - Codex-ready specs prepared
@@ -56,12 +56,13 @@ Prepare for Phase 13 multi-session UI.
 - Added database-backed session, command approval, and execution output persistence
 - Added `/sessions` create/list/detail endpoints backed by persisted data
 - Added PostgreSQL service and API database configuration in Docker Compose
+- Added frontend session creation, listing, switching, and persisted history loading
 
 ## In Progress
 - None
 
 ## Next Up
-- Phase 13: add session creation, listing, switching, and history loading in the UI
+- Phase 14: add Server-Sent Events for streaming responses
 
 ## Open Questions
 - Which deployment provider will be final after Railway demo?
@@ -89,3 +90,4 @@ Phase 9 verification completed with backend pytest, backend Ruff, Nuxt typecheck
 Phase 10 verification completed with backend pytest, backend Ruff, Nuxt typecheck, and Anthropic SDK import smoke check.
 Phase 11 verification completed with backend pytest, backend Ruff, and Nuxt typecheck.
 Phase 12 verification completed with backend pytest, backend Ruff, Nuxt typecheck, and Docker Compose config validation.
+Phase 13 verification completed with backend pytest, backend Ruff, and Nuxt typecheck using a clean generated Nuxt cache.
