@@ -40,3 +40,40 @@ export interface ChatMessage {
   content: string
   commands?: CommandProposal[]
 }
+
+export interface SessionCreateResponse {
+  success: boolean
+  data: {
+    session_id: string
+  }
+}
+
+export interface SessionListResponse {
+  success: boolean
+  data: SessionListItem[]
+}
+
+export interface SessionListItem {
+  id: string
+}
+
+export interface SessionDetailResponse {
+  success: boolean
+  data: {
+    messages: SessionMessage[]
+    commands: SessionCommand[]
+  }
+}
+
+export interface SessionMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export interface SessionCommand {
+  id: string
+  cmd: string
+  risk: 'low' | 'medium' | 'high'
+  status: CommandStatus
+  output: string | null
+}

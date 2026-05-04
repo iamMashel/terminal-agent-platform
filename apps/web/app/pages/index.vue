@@ -6,31 +6,26 @@ import type {
   CommandApprovalResponse,
   CommandExecutionResponse,
   CommandProposal,
+  SessionCreateResponse,
+  SessionDetailResponse,
+  SessionListItem,
+  SessionListResponse,
 } from '../../types/chat'
 import type { HealthResponse } from '../../types/health'
 
 const config = useRuntimeConfig()
-const sessionId = 'local-session'
-const nextMessageId = ref(3)
+const activeSessionId = ref<string | null>(null)
+const sessions = ref<SessionListItem[]>([])
+const nextMessageId = ref(1)
 const draftMessage = ref('')
 const errorMessage = ref<string | null>(null)
 const isSending = ref(false)
+const isLoadingSessions = ref(false)
 const health = ref<HealthResponse | null>(null)
 const pendingApprovalIds = ref<string[]>([])
 const pendingExecutionIds = ref<string[]>([])
 
-const messages = ref<ChatMessage[]>([
-  {
-    id: 1,
-    role: 'assistant',
-    content: 'Ready for a terminal task. I will propose safe read-only commands in this phase.',
-  },
-  {
-    id: 2,
-    role: 'user',
-    content: 'Can you help me inspect this project?',
-  },
-])
+const messages = ref<ChatMessage[]>([])
 
 onMounted(async () => {
   try {
@@ -40,12 +35,125 @@ onMounted(async () => {
   } catch {
     health.value = null
   }
+
+  await loadSessions()
 })
+
+async function loadSessions() {
+  isLoadingSessions.value = true
+  errorMessage.value = null
+
+  try {
+    const response = await $fetch<SessionListResponse>('/sessions', {
+      baseURL: config.public.apiBaseUrl,
+    })
+    sessions.value = response.data
+
+    if (sessions.value.length === 0) {
+      await createSession()
+      return
+    }
+
+    const firstSession = sessions.value[0]
+
+    if (firstSession) {
+      await selectSession(activeSessionId.value ?? firstSession.id)
+    }
+  } catch {
+    errorMessage.value = 'Unable to load sessions from the backend.'
+  } finally {
+    isLoadingSessions.value = false
+  }
+}
+
+async function createSession() {
+  errorMessage.value = null
+
+  try {
+    const response = await $fetch<SessionCreateResponse>('/sessions', {
+      baseURL: config.public.apiBaseUrl,
+      method: 'POST',
+    })
+    const session = { id: response.data.session_id }
+    sessions.value = [session, ...sessions.value]
+    await selectSession(session.id)
+  } catch {
+    errorMessage.value = 'Unable to create a new session.'
+  }
+}
+
+async function selectSession(sessionId: string) {
+  activeSessionId.value = sessionId
+  pendingApprovalIds.value = []
+  pendingExecutionIds.value = []
+  errorMessage.value = null
+
+  try {
+    const response = await $fetch<SessionDetailResponse>(`/sessions/${sessionId}`, {
+      baseURL: config.public.apiBaseUrl,
+    })
+
+    messages.value = buildMessagesFromSession(response)
+    nextMessageId.value = messages.value.length + 1
+  } catch {
+    errorMessage.value = 'Unable to load session history.'
+    messages.value = []
+  }
+}
+
+function buildMessagesFromSession(response: SessionDetailResponse): ChatMessage[] {
+  const history: ChatMessage[] = response.data.messages.map((message, index) => ({
+    id: index + 1,
+    role: message.role,
+    content: message.content,
+  }))
+
+  if (history.length === 0) {
+    return [
+      {
+        id: 1,
+        role: 'assistant',
+        content: 'Ready for a terminal task. I will keep every command visible before execution.',
+      },
+    ]
+  }
+
+  const assistantIndexes = history
+    .map((message, index) => (message.role === 'assistant' ? index : -1))
+    .filter((index) => index >= 0)
+  const lastAssistantIndex = assistantIndexes[assistantIndexes.length - 1]
+
+  if (lastAssistantIndex !== undefined && response.data.commands.length > 0) {
+    const assistantMessage = history[lastAssistantIndex]
+
+    if (!assistantMessage) {
+      return history
+    }
+
+    assistantMessage.commands = response.data.commands.map((command) => ({
+      id: command.id,
+      cmd: command.cmd,
+      risk: command.risk,
+      explanation: 'Loaded from persisted session history.',
+      status: command.status,
+      execution: command.output
+        ? {
+            command_id: command.id,
+            status: 'completed',
+            exit_code: 0,
+            output: command.output,
+          }
+        : undefined,
+    }))
+  }
+
+  return history
+}
 
 async function sendMessage() {
   const content = draftMessage.value.trim()
 
-  if (!content || isSending.value) {
+  if (!content || isSending.value || activeSessionId.value === null) {
     return
   }
 
@@ -64,7 +172,7 @@ async function sendMessage() {
       baseURL: config.public.apiBaseUrl,
       method: 'POST',
       body: {
-        session_id: sessionId,
+        session_id: activeSessionId.value,
         message: content,
       },
     })
@@ -158,12 +266,26 @@ function isExecutionPending(commandId: string) {
         <h1>Control Panel</h1>
       </div>
 
-      <button class="new-session-button" type="button">New Session</button>
+      <button
+        class="new-session-button"
+        type="button"
+        :disabled="isLoadingSessions"
+        @click="createSession"
+      >
+        New Session
+      </button>
 
       <nav class="session-list" aria-label="Session list">
-        <button class="session-item active" type="button">
-          <span class="session-name">Local Session</span>
-          <span class="session-meta">{{ sessionId }}</span>
+        <button
+          v-for="session in sessions"
+          :key="session.id"
+          class="session-item"
+          :class="{ active: session.id === activeSessionId }"
+          type="button"
+          @click="selectSession(session.id)"
+        >
+          <span class="session-name">Session</span>
+          <span class="session-meta">{{ session.id }}</span>
         </button>
       </nav>
 
@@ -176,13 +298,18 @@ function isExecutionPending(commandId: string) {
     <section class="chat-panel" aria-labelledby="chat-title">
       <header class="chat-header">
         <div>
-          <p class="eyebrow">Phase 6</p>
-          <h2 id="chat-title">Docker Execution</h2>
+          <p class="eyebrow">Phase 13</p>
+          <h2 id="chat-title">Session History</h2>
         </div>
-        <span class="status-pill">Sandbox required</span>
+        <span class="status-pill">{{ activeSessionId ?? 'No session' }}</span>
       </header>
 
       <div class="message-list" aria-live="polite">
+        <article v-if="isLoadingSessions" class="message assistant">
+          <span class="message-role">assistant</span>
+          <p>Loading sessions...</p>
+        </article>
+
         <article
           v-for="message in messages"
           :key="message.id"
