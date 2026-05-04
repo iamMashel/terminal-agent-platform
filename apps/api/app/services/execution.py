@@ -29,6 +29,10 @@ class ExecutionStreamUpdate:
     exit_code: int | None = None
 
 
+class ExecutionDisabledError(Exception):
+    pass
+
+
 class CommandRunner(Protocol):
     def run(self, command: str, settings: Settings) -> ExecutionResult:
         pass
@@ -180,6 +184,7 @@ def execute_approved_command(
     settings: Settings,
     runner: CommandRunner | None = None,
 ) -> CommandExecutionResponse:
+    ensure_execution_enabled(settings)
     command = get_approved_command(command_id)
     execution_runner = runner or DockerCommandRunner()
     result = execution_runner.run(command.cmd, settings)
@@ -207,6 +212,7 @@ def execute_approved_command_stream(
     settings: Settings,
     runner: StreamingCommandRunner | None = None,
 ) -> Iterator[ExecutionStreamUpdate]:
+    ensure_execution_enabled(settings)
     command = get_approved_command(command_id)
     execution_runner = runner or DockerCommandRunner()
     output_parts = []
@@ -232,3 +238,8 @@ def execute_approved_command_stream(
         )
 
     yield ExecutionStreamUpdate(kind="result", data="", exit_code=exit_code)
+
+
+def ensure_execution_enabled(settings: Settings) -> None:
+    if settings.execution_mode == "disabled":
+        raise ExecutionDisabledError

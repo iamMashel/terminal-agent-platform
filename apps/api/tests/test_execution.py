@@ -86,6 +86,30 @@ def test_execute_endpoint_rejects_unknown_command() -> None:
     assert anyio.run(execute_missing_command) == 404
 
 
+def test_execute_endpoint_returns_forbidden_when_execution_disabled(monkeypatch) -> None:
+    from app.services.execution import ExecutionDisabledError
+
+    def mock_execute_approved_command(command_id, settings):
+        raise ExecutionDisabledError
+
+    monkeypatch.setattr(
+        "app.routes.commands.execute_approved_command",
+        mock_execute_approved_command,
+    )
+
+    async def execute_disabled_command() -> tuple[int, dict[str, str]]:
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post("/commands/disabled-command/execute")
+
+        return response.status_code, response.json()
+
+    status_code, payload = anyio.run(execute_disabled_command)
+
+    assert status_code == 403
+    assert payload == {"detail": "Execution is disabled in production demo."}
+
+
 def test_execute_approved_command_maps_runner_result() -> None:
     from app.core.config import Settings
     from app.schemas.chat import CommandProposal
@@ -111,6 +135,26 @@ def test_execute_approved_command_maps_runner_result() -> None:
 
     assert result.status == "completed"
     assert result.output == "/workspace\n"
+
+
+def test_execute_approved_command_blocks_disabled_execution() -> None:
+    from app.core.config import Settings
+    from app.services.execution import ExecutionDisabledError, execute_approved_command
+
+    class FakeRunner:
+        def run(self, command, settings):
+            raise AssertionError("disabled execution should not reach the runner")
+
+    try:
+        execute_approved_command(
+            "disabled-command",
+            Settings(execution_mode="disabled"),
+            FakeRunner(),
+        )
+    except ExecutionDisabledError:
+        pass
+    else:
+        raise AssertionError("disabled execution should raise ExecutionDisabledError")
 
 
 def test_docker_runner_uses_hardened_container_options(monkeypatch) -> None:
