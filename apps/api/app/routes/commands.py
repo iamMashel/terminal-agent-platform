@@ -1,10 +1,12 @@
 import logging
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 from fastapi import Request
+from fastapi.responses import StreamingResponse
 
 from app.core.config import get_settings
 from app.core.observability import get_trace_context, log_event
+from app.core.sse import stream_command_execution
 from app.schemas.commands import (
     CommandApprovalRequest,
     CommandApprovalResponse,
@@ -81,3 +83,22 @@ async def execute_command(
             status_code=status.HTTP_409_CONFLICT,
             detail="Command must be approved before execution.",
         ) from exc
+
+
+@router.get("/execute/stream")
+async def stream_execute_command(
+    request: Request,
+    command_id: str = Query(min_length=1),
+) -> StreamingResponse:
+    context = get_trace_context(request)
+    log_event(
+        logger,
+        "command.execution_stream_created",
+        context,
+        f"Created execution stream for command {command_id}",
+    )
+    return StreamingResponse(
+        stream_command_execution(command_id, get_settings()),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
+    )
