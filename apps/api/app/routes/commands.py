@@ -19,6 +19,7 @@ from app.services.commands import (
     record_command_approval,
 )
 from app.services.execution import execute_approved_command
+from app.services.execution import ExecutionDisabledError
 
 router = APIRouter()
 logger = logging.getLogger("app.commands")
@@ -82,6 +83,11 @@ async def execute_command(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Command must be approved before execution.",
+        ) from exc
+    except ExecutionDisabledError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Execution is disabled in production demo.",
         ) from exc
 
 

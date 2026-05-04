@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -16,6 +17,7 @@ class Settings(BaseSettings):
     anthropic_max_tokens: int = 512
     anthropic_retry_attempts: int = 2
     database_url: str = "sqlite:///./terminal_agent.db"
+    execution_mode: Literal["docker", "disabled"] = "docker"
     execution_image: str = "alpine:3.20"
     execution_timeout_seconds: int = 30
     execution_memory_limit: str = "128m"

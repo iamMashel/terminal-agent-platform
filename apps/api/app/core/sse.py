@@ -15,6 +15,7 @@ from app.services.commands import (
     register_command_proposal,
 )
 from app.services.execution import execute_approved_command_stream
+from app.services.execution import ExecutionDisabledError
 
 
 def format_sse_event(event: str, data: str) -> str:
@@ -83,6 +84,9 @@ async def stream_command_execution(
         return
     except CommandNotApprovedError:
         yield format_sse_event("error", "Command must be approved before execution.")
+        return
+    except ExecutionDisabledError:
+        yield format_sse_event("error", "Execution is disabled in production demo.")
         return
 
     if not output_sent:

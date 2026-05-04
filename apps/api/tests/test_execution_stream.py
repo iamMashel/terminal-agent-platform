@@ -94,6 +94,34 @@ def test_execute_stream_returns_error_event_for_unapproved_command(monkeypatch) 
     assert "event: done" not in body
 
 
+def test_execute_stream_returns_error_event_when_execution_disabled(monkeypatch) -> None:
+    from app.services.execution import ExecutionDisabledError
+
+    def mock_execute_approved_command(command_id, settings):
+        raise ExecutionDisabledError
+
+    monkeypatch.setattr(
+        "app.core.sse.execute_approved_command_stream",
+        mock_execute_approved_command,
+    )
+
+    async def request_stream() -> str:
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get(
+                "/execute/stream",
+                params={"command_id": "disabled-command"},
+            )
+
+        assert response.status_code == 200
+        return response.text
+
+    body = anyio.run(request_stream)
+
+    assert "event: error\ndata: Execution is disabled in production demo.\n\n" in body
+    assert "event: done" not in body
+
+
 def test_execute_stream_rejects_empty_command_id() -> None:
     async def request_stream() -> int:
         transport = ASGITransport(app=app)

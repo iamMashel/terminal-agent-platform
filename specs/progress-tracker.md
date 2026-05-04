@@ -3,10 +3,10 @@
 Update this file after every meaningful implementation change.
 
 ## Current Phase
-Phase 17 complete
+Phase 18 complete
 
 ## Current Goal
-Prepare for Phase 18 production readiness.
+Prepare for Phase 19 Railway deployment.
 
 ## Completed
 - Codex-ready specs prepared
@@ -61,12 +61,13 @@ Prepare for Phase 18 production readiness.
 - Streamed LangGraph planner, safety, command generation, and explanation progress through `/chat/stream`
 - Added backend `/execute/stream` Server-Sent Events foundation for execution status, output, done, and error events
 - Streamed Docker SDK command output live from the sandbox while preserving persisted execution logs
+- Added execution mode configuration so production demos can disable command execution while local Docker execution remains available
 
 ## In Progress
 - None
 
 ## Next Up
-- Phase 18: add production readiness configuration, CORS, error handling, logging, Docker improvements, and deployment safety
+- Phase 19: deploy API, web, and database with production execution disabled
 
 ## Open Questions
 - Which deployment provider will be final after Railway demo?
@@ -99,3 +100,4 @@ Phase 14 verification completed with backend pytest and backend Ruff.
 Phase 15 verification completed with backend pytest and backend Ruff.
 Phase 16 verification completed with backend pytest and backend Ruff.
 Phase 17 verification completed with backend pytest and backend Ruff.
+Phase 18 verification completed with backend pytest, backend Ruff, and Docker Compose config validation.
